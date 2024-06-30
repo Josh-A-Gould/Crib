@@ -7,20 +7,21 @@ Values = ["2","3","4","5","6","7","8","9","10","J","Q","K","A"]
 
 Cards_List = ["".join(i) for i in itertools.product(Values, Suits)]
 
-def Deal(Cards_List = Cards_List):
+def Deal(Cards_List):
+    Cards_List_Tmp = Cards_List.copy()
     DealerH = []
     PlayerH = []
 
     while len(DealerH) != 6:
-        Dealt_Card = random.choice(Cards_List)
+        Dealt_Card = random.choice(Cards_List_Tmp)
         DealerH.append(Dealt_Card)
-        Cards_List.remove(Dealt_Card)
+        Cards_List_Tmp.remove(Dealt_Card)
 
-        Dealt_Card = random.choice(Cards_List)
+        Dealt_Card = random.choice(Cards_List_Tmp)
         PlayerH.append(Dealt_Card)
-        Cards_List.remove(Dealt_Card)
+        Cards_List_Tmp.remove(Dealt_Card)
 
-    Turn_Card = random.choice(Cards_List)
+    Turn_Card = random.choice(Cards_List_Tmp)
 
     DealerH = [PartedCard(card) for card in DealerH]   
     PlayerH = [PartedCard(card) for card in PlayerH]
@@ -82,7 +83,7 @@ def CountRuns(combs):
     runs = False
     runPts = 0
 
-    while n >= 3:
+    while n >= 3 and runs == False:
         CheckList = [x for x in combs if len(x) == n]
         for x in CheckList:
             Values = [y[2] for y in x]
@@ -104,29 +105,85 @@ def CountPairs(combs):
 
     return pairs
 
-def FlushPts(combs):
+def FlushPts(hand):
     flushPts = 0
 
-    for x in combs:
-        if len(x) == 5:
-            if x[1][1] == x[2][1] == x[3][1] == x[4][1]:
-                if x[4][1] == x[0][1]:
-                    flushPts = 5
-                else:
-                    flushPts = 4
+    if hand[0][1] == hand[1][1] == hand[2][1] == hand[3][1]:
+        if hand[4][1] == hand[0][1]:
+            flushPts = 5
+        else:
+            flushPts = 4
 
     return flushPts
 
-DealerH, PlayerH, Turn = Deal()
+def NibsPts(hand, turn):
+    for x in hand:
+        if x[0] == "J" and x[1] == turn[0][1]:
+            return 1
+    else:
+        return 0
 
-DealerH, PlayerH, Crib = Throw(DealerH, PlayerH)
+def NobsPts(turn):
+    if turn[0][0] == "J":
+        return 2
+    else:
+        return 0
 
-combs = Combs(DealerH+Turn)
- 
-fifteenxTwos = Count15s(combs) * 2
-pairPts = CountPairs(combs) * 2
-flush = FlushPts(combs)
-runPts = CountRuns(combs)
+def Main():
+    global P1Pts
+    global P2Pts
 
-print(pairPts, fifteenxTwos, flush, runPts, DealerH+Turn)
+    P1Pts = 0
+    P2Pts = 0
 
+    while True:
+        Hand(1)
+        Hand(2)
+        if P1Pts >= 121 or P2Pts >= 121:
+            break
+
+    if P1Pts >= 121:
+        print("P1 wins")
+    elif P2Pts >= 121:
+        print("P2 wins")
+
+    print(P1Pts, P2Pts)
+
+def Hand(Dealer):
+    global P1Pts
+    global P2Pts
+
+    DealerH, PlayerH, Turn = Deal(Cards_List)
+
+    if Dealer == 1:
+        P1Pts += NobsPts(Turn)
+    else:
+        P2Pts += NobsPts(Turn)
+
+    print("Doubt")
+
+    if P1Pts >= 121 or P2Pts >= 121:
+        return
+
+    DealerH, PlayerH, Crib = Throw(DealerH, PlayerH)
+
+    combs = Combs(PlayerH+Turn)
+
+    PlayerPts = Count15s(combs) * 2 + CountPairs(combs) * 2 + FlushPts(PlayerH+Turn) + CountRuns(combs) + NibsPts(PlayerH, Turn)
+
+    combs = Combs(DealerH+Turn)
+
+    DealerPts = Count15s(combs) * 2 + CountPairs(combs) * 2 + FlushPts(DealerH+Turn) + CountRuns(combs) + NibsPts(DealerH, Turn)
+
+    if Dealer == 1:
+        P2Pts += PlayerPts
+        if P2Pts >= 121:
+            return
+        P1Pts += DealerPts
+    else:
+        P1Pts += PlayerPts
+        if P1Pts >= 121:
+            return
+        P2Pts += DealerPts
+
+Main()
