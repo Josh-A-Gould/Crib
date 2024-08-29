@@ -38,13 +38,37 @@ def PartedCard(Card):
 
     return Parted
 
-def Throw(DealerH, PlayerH):
-    Crib = []
-    Crib += DealerH[4:]
-    Crib += PlayerH[4:]
-    DealerH = DealerH[:4]
-    PlayerH = PlayerH[:4]
-    return Crib, DealerH, PlayerH
+def Throw(DealerH, PlayerH, Dealer):
+    Crib = []    
+    
+    if Dealer == 1:
+        Throw = input("From the following cards which do you wish to throw to your crib? "+str(DealerH)+"\n")
+        try:
+            Crib += [DealerH[int(Throw[0])-1]]
+            Crib += [DealerH[int(Throw[1])-1]]
+        except: 
+            raise ValueError("Please enter two integers in the format xx")
+        DealerH.pop(int(Throw[1])-1)
+        DealerH.pop(int(Throw[0])-1)
+
+        Crib += PlayerH[4:]        
+        PlayerH = PlayerH[:4]
+    elif Dealer == 2:
+        Throw = input("From the following cards which do you wish to throw to opponents crib? "+str(PlayerH)+"\n")
+        try:
+            Crib += [PlayerH[int(Throw[0])-1]]
+            Crib += [PlayerH[int(Throw[1])-1]]
+        except: 
+            raise ValueError("Please enter two integers in the format xx")
+        PlayerH.pop(int(Throw[1])-1)
+        PlayerH.pop(int(Throw[0])-1)
+
+        Crib += DealerH[4:]        
+        DealerH = DealerH[:4]
+    else:
+        raise ValueError("Dealer value of non-(1/2)")
+
+    return DealerH, PlayerH, Crib
 
 def Combs(Hand):
     if len(Hand) == 0:
@@ -101,7 +125,7 @@ def CountPairs(combs):
     for x in combs:
         if len(x) == 2:
             if x[0][0] == x[1][0]:
-                pairs += 1#
+                pairs += 1
 
     return pairs
 
@@ -129,6 +153,30 @@ def NobsPts(turn):
     else:
         return 0
 
+def Cut(Cards_List):
+    Cards_List_Tmp = Cards_List.copy()
+    P1Card = []
+    P2Card = []
+
+    P1_Card = random.choice(Cards_List_Tmp)
+    Cards_List_Tmp.remove(P1_Card)
+
+    P2_Card = random.choice(Cards_List_Tmp)
+    Cards_List_Tmp.remove(P2_Card)
+
+    print(P1_Card, P2_Card)
+
+    P1_Card, P2_Card = PartedCard(P1_Card), PartedCard(P2_Card)
+
+    if P1_Card[2] > P2_Card[2]:
+        First = 2
+    elif P1_Card[2] < P2_Card[2]:
+        First = 1
+    else:
+        First = Cut(Cards_List)
+
+    return First
+
 def Main():
     global P1Pts
     global P2Pts
@@ -136,9 +184,11 @@ def Main():
     P1Pts = 0
     P2Pts = 0
 
+    FirstCrib = Cut(Cards_List)
+
     while True:
-        Hand(1)
-        Hand(2)
+        Hand(FirstCrib)
+        Hand(FirstCrib%2 + 1)
         if P1Pts >= 121 or P2Pts >= 121:
             break
 
@@ -160,12 +210,13 @@ def Hand(Dealer):
     else:
         P2Pts += NobsPts(Turn)
 
-    print("Doubt")
-
     if P1Pts >= 121 or P2Pts >= 121:
+        print("This shouldn't have happened")
         return
 
-    DealerH, PlayerH, Crib = Throw(DealerH, PlayerH)
+    DealerH, PlayerH, Crib = Throw(DealerH, PlayerH, Dealer)
+
+    print(DealerH, PlayerH, Crib, Dealer, P1Pts, P2Pts)
 
     combs = Combs(PlayerH+Turn)
 
